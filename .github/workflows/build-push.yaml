@@ -22,6 +22,9 @@ jobs:
           - name: terraform
             context: ./terraform
             dockerfile: ./terraform/Dockerfile
+          - name: debian-slim
+            context: ./debian-slim
+            dockerfile: ./debian-slim/Dockerfile
 
     steps:
       - name: Checkout repository
