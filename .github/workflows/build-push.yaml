@@ -25,6 +25,9 @@ jobs:
           - name: debian-slim
             context: ./debian-slim
             dockerfile: ./debian-slim/Dockerfile
+          - name: debian-docker
+            context: ./debian-docker
+            dockerfile: ./debian-docker/Dockerfile
 
     steps:
       - name: Checkout repository
