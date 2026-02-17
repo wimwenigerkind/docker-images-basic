@@ -8,7 +8,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+  REGISTRY_USER: ${{ github.repository_owner }}
 
 jobs:
   build-and-push:
@@ -16,18 +16,6 @@ jobs:
     permissions:
       contents: read
       packages: write
-    strategy:
-      matrix:
-        include:
-          - name: terraform
-            context: ./terraform
-            dockerfile: ./terraform/Dockerfile
-          - name: debian-slim
-            context: ./debian-slim
-            dockerfile: ./debian-slim/Dockerfile
-          - name: debian-docker
-            context: ./debian-docker
-            dockerfile: ./debian-docker/Dockerfile
 
     steps:
       - name: Checkout repository
@@ -43,22 +31,14 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata for Docker
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-${{ matrix.name }}
-          tags: |
-            type=raw,value=latest
-            type=sha,prefix={{branch}}-
-
-      - name: Build and push Docker image (${{ matrix.name }})
-        uses: docker/build-push-action@v5
-        with:
-          context: ${{ matrix.context }}
-          file: ${{ matrix.dockerfile }}
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha,scope=${{ matrix.name }}
-          cache-to: type=gha,mode=max,scope=${{ matrix.name }}
+      - name: Build and push all images
+        run: |
+          for bakefile in container/*/docker-bake.hcl; do
+            echo "=== Building ${bakefile} ==="
+            docker buildx bake --push \
+              -f docker-bake.defaults.hcl \
+              -f "${bakefile}"
+          done
+        env:
+          REGISTRY: ${{ env.REGISTRY }}
+          REGISTRY_USER: ${{ env.REGISTRY_USER }}
